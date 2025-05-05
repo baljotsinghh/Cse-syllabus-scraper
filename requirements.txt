@@ -1,0 +1,7 @@
+streamlit
+requests
+bs4 
+os
+re
+urllib.parse 
+time
