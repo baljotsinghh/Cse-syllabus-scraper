@@ -5,6 +5,8 @@ import os
 import re
 from urllib.parse import urljoin
 import time
+import zipfile
+from io import BytesIO
 
 # Base URL of the syllabus page
 BASE_URL = "https://ptu.ac.in/syllabus/#1610102986246-e6ac72c5-c6da"
@@ -52,6 +54,16 @@ def download_pdf(url, filename, download_dir):
     except requests.RequestException as e:
         return False, f"Error downloading {url}: {e}"
 
+def create_zip_of_pdfs(download_dir):
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for filename in os.listdir(download_dir):
+            if filename.endswith('.pdf'):
+                file_path = os.path.join(download_dir, filename)
+                zip_file.write(file_path, os.path.join("cse_syllabus_pdfs", filename))
+    zip_buffer.seek(0)
+    return zip_buffer
+
 # Streamlit app
 st.title("PTU CSE Syllabus Downloader")
 st.markdown("This app scrapes and downloads Computer Science and Engineering (CSE) syllabus PDFs from the PTU website.")
@@ -97,7 +109,17 @@ if st.button("Scrape CSE Syllabus PDFs"):
                             mime="application/pdf"
                         )
                 
+                # Button to download all PDFs as ZIP
+                if downloaded_files:
+                    zip_buffer = create_zip_of_pdfs(DOWNLOAD_DIR)
+                    st.download_button(
+                        label="Download All PDFs as ZIP",
+                        data=zip_buffer,
+                        file_name="cse_syllabus_pdfs.zip",
+                        mime="application/zip"
+                    )
+                
                 st.success(f"Download complete. PDFs saved in '{DOWNLOAD_DIR}' directory.")
 
 st.markdown("---")
-st.info("Click the 'Scrape CSE Syllabus PDFs' button to start. The app will fetch and download all CSE syllabus PDFs from the PTU syllabus page.")
+st.info("Click the 'Scrape CSE Syllabus PDFs' button to start. The app will fetch and download all CSE syllabus PDFs from the PTU syllabus page. After downloading, you can download individual PDFs or all as a ZIP file.")
